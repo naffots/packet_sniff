@@ -32,6 +32,7 @@ sender="000b78006001".decode("hex")
 notopen=1
 # = open('/tmp/fifo', 'w')
 
+
 # receive a packet
 while True:
     packet = s.recvfrom(65565)
@@ -81,36 +82,26 @@ while True:
         d_addr = socket.inet_ntoa(iph[9]);
         
         #UDP packets
-        if (s_addr == "80.217.247.103") :
-            identification = iph[3];
-
-            print "IP Sender: ",s_addr
-            print "IP Destination: ",d_addr
-            print "Total length: ",total_length
-            print "Identification: "
+        if (s_addr == "192.168.1.70") & (protocol == 6) :
+            identification = iph[3]
+            offset = (iph[4] & 0x1FFF) 
 
             u = iph_length + eth_length
-            udph_length = 8
-            udp_header = packet[u:u+8]
+            tcph_length = 32 
+            tcp_header = packet[u:u+tcph_length]
 
             #now unpack them :)
-            udph = unpack('!HHHH' , udp_header)
+            tcph = unpack('!HHIIBBHHH12s' , tcp_header)
 
-            source_port = udph[0]
-            dest_port = udph[1]
-            length = udph[2]
-            checksum = udph[3]
+            source_port = tcph[0]
+            dest_port = tcph[1]
+            sequence_nr = tcph[2]
+            ack_nr = tcph[3]
 
             #get data from the packet
-            h_size = eth_length + iph_length + udph_length
+            h_size = eth_length + iph_length + tcph_length
             data = packet[h_size:]
 
-            if (dest_port==2068):
-              frame_n=ord(data[0])*256+ord(data[1])
-              part=ord(data[3])
-              print "frame",frame_n,"part",part, "len",len(data),"end?",end
-              if (part==0) & notopen:
-                 f = open('files/'+str(frame_n)+"_"+str(part).zfill(3)+'.jpg', 'w')
-                 notopen=0
-              if notopen==0:
-                  f.write(data[4:])
+            f = open('paket.jpg', 'a')
+            f.write(bytearray(data))
+            f.close()
